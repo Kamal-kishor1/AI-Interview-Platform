@@ -10,3 +10,11 @@ export const startInterview = async (candidateId) => {
 
   return response.data;
 };
+
+export const getCurrentQuestion = async (interviewId) => {
+  const response = await api.get(
+    `/api/v1/interviews/${interviewId}/current-question`
+  );
+
+  return response.data;
+};

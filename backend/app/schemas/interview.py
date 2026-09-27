@@ -18,7 +18,7 @@ class InterviewResponse(InterviewCreate):
     completed_at: datetime | None = None
 
 
-class InterviewStartResponse(BaseModel):
+class InterviewQuestionResponse(BaseModel):
     interview_id: int
     interview_type: str
     question_id: int
