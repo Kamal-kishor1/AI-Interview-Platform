@@ -1,16 +1,17 @@
+import { formatDuration } from "../../utils/formatDuration";
+
 function InterviewSummary({ result }) {
   return (
     <div className="rounded-xl border bg-white p-8 shadow-sm">
-      <h2 className="text-xl font-semibold">
-        Interview Summary
-      </h2>
+      <div>
+        <h2 className="text-xl font-semibold">Interview Summary</h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Your interview has been completed.
+        </p>
+      </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <SummaryItem
-          label="Interview ID"
-          value={result.interview_id}
-        />
-
         <SummaryItem
           label="Candidate Name"
           value={result.candidate_name}
@@ -38,7 +39,7 @@ function InterviewSummary({ result }) {
 
         <SummaryItem
           label="Duration"
-          value={`${result.duration_seconds} seconds`}
+          value={formatDuration(result.duration_seconds)}
         />
       </div>
     </div>
@@ -47,12 +48,10 @@ function InterviewSummary({ result }) {
 
 function SummaryItem({ label, value }) {
   return (
-    <div>
-      <p className="text-sm text-gray-500">
-        {label}
-      </p>
+    <div className="rounded-lg bg-gray-50 p-4">
+      <p className="text-sm text-gray-500">{label}</p>
 
-      <p className="mt-1 font-medium">
+      <p className="mt-1 text-lg font-medium text-gray-900">
         {value}
       </p>
     </div>
