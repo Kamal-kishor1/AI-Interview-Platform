@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -39,3 +40,5 @@ class Answer(Base):
         nullable=False,
         server_default=func.now(),
     )
+
+    evaluation = relationship("Evaluation", back_populates="answer", uselist=False)

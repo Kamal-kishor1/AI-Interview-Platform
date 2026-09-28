@@ -3,13 +3,14 @@ from app.routers.resume import router as resume_router
 from app.routers.interview import router as interview_router
 from app.routers.answer import router as answer_router
 from app.routers.result import router as result_router
+from app.routers.evaluation import router as evaluation_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="AI Interview Platform",
+    title="AI Interview Platform API",
     description="Platform for a quick interview preparation.",
-    version="0.0.1",
+    version="1.0.0",
 )
 
 app.add_middleware(
@@ -33,3 +34,4 @@ app.include_router(resume_router)
 app.include_router(interview_router)
 app.include_router(answer_router)
 app.include_router(result_router)
+app.include_router(evaluation_router)
