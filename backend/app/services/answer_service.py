@@ -7,6 +7,13 @@ from app.models.answer import Answer
 from app.models.interview import Interview
 from app.models.question import Question
 
+from app.services.ai_evaluation_service import (
+    AIEvaluationService,
+    AIEvaluationDatabaseError,
+    AnswerNotFoundError as AIEvaluationAnswerNotFoundError,
+    QuestionNotFoundError as AIEvaluationQuestionNotFoundError,
+)
+
 """
 One limitation of the current MVP
 
@@ -52,6 +59,10 @@ class AnswerCreationError(AnswerServiceError):
     """Raised when an answer cannot be saved."""
 
 
+class AIProviderError(AnswerServiceError):
+    """Raised  when AI Provider fails."""
+
+
 class AnswerService:
 
     @staticmethod
@@ -66,6 +77,7 @@ class AnswerService:
             raise AnswerCreationError("Answer cannot be empty.")
 
         # 2. find interview
+
         interview = db.query(Interview).filter(Interview.id == interview_id).first()
 
         if not interview:
@@ -74,12 +86,14 @@ class AnswerService:
             )
 
         # 3. Interview must be active
+
         if interview.status != "IN_PROGRESS":
             raise InterviewNotActiveError(
                 f"Interview is not active. Current Status: {interview.status}"
             )
 
         # 4. find question
+
         question = db.query(Question).filter(Question.id == question_id).first()
 
         if not question:
@@ -88,10 +102,12 @@ class AnswerService:
             )
 
         # 5. verify question belongs to interview type
+
         if question.interview_type != interview.interview_type:
             raise InvalidQuestionError("Question does not belong to this interview.")
 
         # 6. Prevent duplicate answers
+
         existing_answer = (
             db.query(Answer)
             .filter(
@@ -104,16 +120,43 @@ class AnswerService:
         if existing_answer:
             raise DuplicateAnswerError("This question has already been answered.")
 
-        # 7. save answer
+        # 7. create answer
         answer = Answer(
             interview_id=interview_id, question_id=question_id, answer_text=clean_answer
         )
 
         try:
+            # Add answer to the SQLALchemy session
+
             db.add(answer)
+
+            # Flush so Postgressql generates answer.id
+            # without committing the transaction yet.
+
             db.flush()
 
+            """ New step to integrate the ai-evaluation """
+
+            # i) Evaluate the saved answer using AI
+
+            try:
+
+                evaluation = AIEvaluationService.evaluate_answer(
+                    answer_id=answer.id, db=db
+                )
+
+            except (
+                AIEvaluationAnswerNotFoundError,
+                AIEvaluationQuestionNotFoundError,
+                AIEvaluationDatabaseError,
+                RuntimeError,
+            ) as exc:
+                raise AIProviderError(
+                    "AI evaluation failed for the submitted answer."
+                ) from exc
+
             # 8. find all question for this interview
+
             questions = (
                 db.query(Question)
                 .filter(Question.interview_type == interview.interview_type)
@@ -122,6 +165,7 @@ class AnswerService:
             )
 
             # 9. Find current question position
+
             current_index = next(
                 (
                     index
@@ -156,6 +200,7 @@ class AnswerService:
                     "total_questions": total_questions,
                     "answer_saved": True,
                     "interview_completed": True,
+                    "evaluation": evaluation,
                     "next_question_id": None,
                     "next_question_number": None,
                     "next_question_text": None,
@@ -175,6 +220,7 @@ class AnswerService:
                 "total_questions": total_questions,
                 "answer_saved": True,
                 "interview_completed": False,
+                "evaluation": evaluation,
                 "next_question_id": next_question.id,
                 "next_question_number": question_number + 1,
                 "next_question_text": next_question.question_text,

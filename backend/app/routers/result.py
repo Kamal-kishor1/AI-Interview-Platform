@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.schemas.result import InterviewResultResponse
-from app.services.interview_result_service import InterviewResultService
 
+from app.services.interview_result_service import InterviewResultService
 from app.services.answer_service import InterviewNotFoundError
 
 router = APIRouter(prefix="/api/v1/interviews", tags=["interview-results"])
