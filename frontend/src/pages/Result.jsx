@@ -108,7 +108,7 @@ function Result() {
 
   // Display the complete interview result.
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
+    <div className="mx-auto max-w-6xl px-6 py-10">
       {/* Page heading. */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">

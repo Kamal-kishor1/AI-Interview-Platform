@@ -3,18 +3,20 @@ import { formatDuration } from "../../utils/formatDuration";
 function InterviewSummary({ result }) {
   return (
     <div className="space-y-6">
-      {/* This card shows the basic interview information. */}
+      {/* Shows the main interview information. */}
       <div className="rounded-xl border bg-white p-8 shadow-sm">
         <div>
-          <h2 className="text-xl font-semibold">Interview Summary</h2>
+          <h2 className="text-xl font-semibold">
+            Interview Summary
+          </h2>
 
           <p className="mt-1 text-sm text-gray-500">
             Your interview has been completed.
           </p>
         </div>
 
-        {/* Show important interview details in a simple grid. */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {/* Keeps summary information easy to scan. */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <SummaryItem
             label="Candidate Name"
             value={result.candidate_name}
@@ -45,7 +47,7 @@ function InterviewSummary({ result }) {
             value={formatDuration(result.duration_seconds)}
           />
 
-          {/* Overall score comes from the backend calculation. */}
+          {/* Overall score is calculated by the backend. */}
           <SummaryItem
             label="Overall Score"
             value={
@@ -58,7 +60,7 @@ function InterviewSummary({ result }) {
         </div>
       </div>
 
-      {/* Show the AI evaluation for every submitted answer. */}
+      {/* Main AI evaluation section. */}
       <div className="rounded-xl border bg-white p-8 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">
@@ -70,8 +72,11 @@ function InterviewSummary({ result }) {
           </p>
         </div>
 
-        <div className="mt-6 space-y-6">
-          {/* evaluations is an array because an interview has many answers. */}
+        {/* 
+          Questions are placed in one horizontal row.
+          The scrollbar is hidden to keep the UI clean.
+        */}
+        <div className="hide-scrollbar mt-6 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2">
           {result.evaluations?.length > 0 ? (
             result.evaluations.map((item, index) => (
               <EvaluationItem
@@ -86,31 +91,50 @@ function InterviewSummary({ result }) {
             </p>
           )}
         </div>
+
+        {/* Small hint so users know the cards can be moved. */}
+        {result.evaluations?.length > 1 && (
+          <p className="mt-4 text-center text-xs text-gray-400">
+            Scroll horizontally to view other questions
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
 /*
- * Displays one question, the candidate's answer,
- * and its AI evaluation.
+ * One question becomes one horizontal card.
  */
 function EvaluationItem({ item, questionNumber }) {
   const evaluation = item.evaluation;
 
   return (
-    <div className="rounded-xl border bg-gray-50 p-6">
-      {/* Question */}
+    <div
+      className="
+        min-w-[88%]
+        snap-start
+        rounded-xl
+        border
+        bg-gray-50
+        p-6
+        sm:min-w-[75%]
+        lg:min-w-[65%]
+        xl:min-w-[55%]
+      "
+    >
+      {/* Question number. */}
       <h3 className="text-lg font-semibold text-gray-900">
         Question {questionNumber}
       </h3>
 
+      {/* Interview question. */}
       <p className="mt-3 leading-7 text-gray-800">
         {item.question_text || "Question not available."}
       </p>
 
-      {/* Candidate answer */}
-      <div className="mt-5">
+      {/* Candidate answer. */}
+      <div className="mt-5 rounded-lg bg-white p-4">
         <p className="text-sm font-medium text-gray-500">
           Your Answer
         </p>
@@ -120,11 +144,11 @@ function EvaluationItem({ item, questionNumber }) {
         </p>
       </div>
 
-      {/* Evaluation may be missing, so handle that safely. */}
+      {/* Show evaluation when available. */}
       {evaluation ? (
         <>
-          {/* Four individual AI scores. */}
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {/* Four main AI scores. */}
+          <div className="mt-5 grid grid-cols-2 gap-3">
             <ScoreItem
               label="Correctness"
               score={evaluation.correctness_score}
@@ -146,7 +170,7 @@ function EvaluationItem({ item, questionNumber }) {
             />
           </div>
 
-          {/* Overall score for this particular answer. */}
+          {/* Score for this answer. */}
           <div className="mt-4 rounded-lg border bg-white p-4">
             <p className="text-sm text-gray-500">
               Answer Score
@@ -157,7 +181,7 @@ function EvaluationItem({ item, questionNumber }) {
             </p>
           </div>
 
-          {/* AI feedback sections. */}
+          {/* AI feedback. */}
           <FeedbackItem
             title="Strengths"
             content={evaluation.strengths}
@@ -174,7 +198,7 @@ function EvaluationItem({ item, questionNumber }) {
           />
         </>
       ) : (
-        <p className="mt-6 text-sm text-gray-500">
+        <p className="mt-5 text-sm text-gray-500">
           AI evaluation is not available for this answer.
         </p>
       )}
@@ -182,11 +206,13 @@ function EvaluationItem({ item, questionNumber }) {
   );
 }
 
-/* Displays one score such as Correctness: 8/10. */
+/* Shows one evaluation score. */
 function ScoreItem({ label, score }) {
   return (
     <div className="rounded-lg bg-white p-4">
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm text-gray-500">
+        {label}
+      </p>
 
       <p className="mt-1 text-lg font-semibold text-gray-900">
         {score} / 10
@@ -195,7 +221,7 @@ function ScoreItem({ label, score }) {
   );
 }
 
-/* Displays one feedback section. */
+/* Shows one feedback section. */
 function FeedbackItem({ title, content }) {
   return (
     <div className="mt-5 rounded-lg bg-white p-4">
@@ -210,11 +236,13 @@ function FeedbackItem({ title, content }) {
   );
 }
 
-/* Reusable component for basic interview information. */
+/* Reusable summary field. */
 function SummaryItem({ label, value }) {
   return (
     <div className="rounded-lg bg-gray-50 p-4">
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm text-gray-500">
+        {label}
+      </p>
 
       <p className="mt-1 text-lg font-medium text-gray-900">
         {value}
