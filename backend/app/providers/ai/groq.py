@@ -2,8 +2,11 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 
 from app.providers.ai.base import AIProvider
+
 from app.core.config import settings
+
 from app.schemas.ai_evaluation import AIEvaluationResponse
+from app.schemas.candidate_context import CandidateContextExtraction
 
 
 class GroqProvider(AIProvider):
@@ -13,6 +16,8 @@ class GroqProvider(AIProvider):
         api_key: str | None = None,
         model: str | None = None,
     ):
+
+        # Groq configuration
 
         self.api_key = api_key or settings.GROQ_API_KEY
 
@@ -24,7 +29,11 @@ class GroqProvider(AIProvider):
         if not self.model:
             raise ValueError("GROQ_MODEL environment variable is not configured.")
 
+        # base groq llm
+
         self.llm = ChatGroq(api_key=self.api_key, model=self.model, temperature=0)
+
+        # ai evaluation
 
         self.structured_llm = self.llm.with_structured_output(AIEvaluationResponse)
 
@@ -80,6 +89,80 @@ Candidate Answer:
 
         self.chain = self.prompt | self.structured_llm
 
+        # candidate context extraction
+
+        self.candidate_context_llm = self.llm.with_structured_output(
+            CandidateContextExtraction
+        )
+
+        # prompt specifically for resume extraction
+
+        self.extract_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """
+You are a professional resume information extractor.
+
+Your task is to extract structured candidate information
+from the provided resume text.
+
+Extract ONLY information that is explicitly present in
+the resume.
+
+Do NOT:
+- invent information
+- infer skills that are not stated
+- create projects that are not present
+- create work experience that is not present
+- add technologies that are not explicitly supported
+- add assumptions about the candidate
+
+Extract these three categories:
+
+1. Skills
+   - Extract technical and professional skills explicitly
+     mentioned in the resume.
+   - Return each skill as a separate item.
+
+2. Projects
+   - Extract projects explicitly mentioned in the resume.
+   - For each project provide:
+     - project name
+     - description when available
+     - technologies explicitly mentioned for that project
+
+3. Experience
+   - Extract work experience, internships, or other
+     professional experience explicitly mentioned.
+   - For each experience provide:
+     - role when available
+     - company when available
+     - description when available
+
+If a category is not present in the resume, return an
+empty list for that category.
+
+The output must follow the provided structured schema.
+""",
+                ),
+                (
+                    "human",
+                    """
+Resume Text:
+
+{resume_text}
+""",
+                ),
+            ]
+        )
+
+        # this is chain which works: resume text -> extraction prompt -> groq llm -> response schema
+
+        self.extract_chain = self.extract_prompt | self.candidate_context_llm
+
+    # ai evaluation
+
     def evaluate_answer(
         self,
         question_text: str,
@@ -101,6 +184,31 @@ Candidate Answer:
             )
 
             if not isinstance(result, AIEvaluationResponse):
+                raise ValueError("Groq returned an invalid evaluation response.")
+
+            return result
+
+        except Exception as exc:
+            raise RuntimeError(
+                "Failed to evaluate the candidate's answer using Groq."
+            ) from exc
+
+    # candidate context extraction
+
+    async def extract_candidate_context(
+        self, resume_text: str
+    ) -> CandidateContextExtraction:
+
+        if not resume_text or not resume_text.strip():
+            raise ValueError("Resume text can not be empty.")
+
+        try:
+
+            result = await self.extract_chain.ainvoke({"resume_text": resume_text})
+
+            # validate returned object
+
+            if not isinstance(result, CandidateContextExtraction):
                 raise ValueError("Groq returned an invalid evaluation response.")
 
             return result

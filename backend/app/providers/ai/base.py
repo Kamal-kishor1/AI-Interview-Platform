@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from app.schemas.ai_evaluation import AIEvaluationResponse
+from app.schemas.candidate_context import CandidateContextExtraction
 
 
 class AIProvider(ABC):
@@ -22,4 +23,11 @@ class AIProvider(ABC):
         Returns:
             A structured AI evaluation.
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def extract_candidate_context(
+        self, resume_text: str
+    ) -> CandidateContextExtraction:
+        """Extract structured candidate context from resume text."""
         raise NotImplementedError
