@@ -61,7 +61,7 @@ function InterviewSummary({ result }) {
       </div>
 
       {/* Main AI evaluation section. */}
-      <div className="rounded-xl border bg-white p-8 shadow-sm">
+      <div className="min-w-0 overflow-hidden rounded-xl border bg-white p-8 shadow-sm">
         <div>
           <h2 className="text-xl font-semibold">
             AI Evaluation
@@ -76,7 +76,7 @@ function InterviewSummary({ result }) {
           Questions are placed in one horizontal row.
           The scrollbar is hidden to keep the UI clean.
         */}
-        <div className="hide-scrollbar mt-6 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2">
+        <div className="hide-scrollbar mt-6 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2">
           {result.evaluations?.length > 0 ? (
             result.evaluations.map((item, index) => (
               <EvaluationItem
@@ -112,16 +112,14 @@ function EvaluationItem({ item, questionNumber }) {
   return (
     <div
       className="
-        min-w-[88%]
+        min-w-full
+        max-w-full
         snap-start
         rounded-xl
         border
         bg-gray-50
         p-6
-        sm:min-w-[75%]
-        lg:min-w-[65%]
-        xl:min-w-[55%]
-      "
+    "
     >
       {/* Question number. */}
       <h3 className="text-lg font-semibold text-gray-900">

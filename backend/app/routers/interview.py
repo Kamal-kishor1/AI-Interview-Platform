@@ -31,9 +31,7 @@ def start_interview(
 ) -> InterviewQuestionResponse:
 
     try:
-        result = InterviewService.start_interview(
-            db=db, candidate_id=interview_data.candidate_id
-        )
+        result = InterviewService.start_interview(db=db, interview_data=interview_data)
 
         return result
 

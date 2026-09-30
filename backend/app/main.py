@@ -5,6 +5,7 @@ from app.routers.answer import router as answer_router
 from app.routers.result import router as result_router
 from app.routers.evaluation import router as evaluation_router
 from app.routers.ai_evaluation import router as ai_evaluation_router
+from app.routers.candidate import router as candidate_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,6 +33,7 @@ def app_info():
 
 # Register the resume router
 app.include_router(resume_router)
+app.include_router(candidate_router)
 app.include_router(interview_router)
 app.include_router(answer_router)
 app.include_router(result_router)

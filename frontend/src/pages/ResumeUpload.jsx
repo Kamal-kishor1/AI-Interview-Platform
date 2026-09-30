@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ResumeForm from "../components/resume/ResumeForm";
 import ResumeProcessedCard from "../components/resume/ResumeProcessedCard";
 
-import { startInterview } from "../services/api/interviewApi";
 import { uploadResume } from "../services/api/resumeApi";
 
 import { getApiErrorMessage } from "../utils/errorHandler";
@@ -19,8 +18,6 @@ function ResumeUpload() {
   const [candidate, setCandidate] = useState(null);
 
   const [loading, setLoading] = useState(false);
-  const [startingInterview, setStartingInterview] =
-    useState(false);
 
   const [error, setError] = useState("");
 
@@ -35,6 +32,9 @@ function ResumeUpload() {
       return;
     }
 
+    /*
+     * Only PDF and DOCX files are supported.
+     */
     const allowedTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -56,6 +56,10 @@ function ResumeUpload() {
 
     setFile(selectedFile);
   };
+
+  /*
+   * Upload resume and create/process candidate.
+   */
 
   const handleUpload = async () => {
     if (!name.trim()) {
@@ -88,7 +92,13 @@ function ResumeUpload() {
         candidateData
       );
 
+      /*
+       * Store the processed candidate so that
+       * ResumeProcessedCard can display it.
+       */
+
       setCandidate(candidateData);
+
     } catch (err) {
       console.error(
         "Resume upload error:",
@@ -106,62 +116,22 @@ function ResumeUpload() {
     }
   };
 
-  const handleStartInterview = async () => {
+  /*
+   * Navigate to the interview configuration page.
+   *
+   * We only pass the candidate ID in the URL.
+   * The configuration page can use this ID as
+   * the source of truth.
+   */
+  const handleConfigureInterview = () => {
     if (!candidate?.id) {
       setError("Candidate information is missing.");
       return;
     }
 
-    try {
-      setStartingInterview(true);
-      setError("");
-
-      console.log(
-        "Starting interview for candidate:",
-        candidate.id
-      );
-
-      const interviewData = await startInterview(
-        candidate.id
-      );
-
-      console.log(
-        "Interview started:",
-        interviewData
-      );
-
-      /*
-       * IMPORTANT:
-       * Use interviewData here.
-       *
-       * The previous code used:
-       *
-       * navigate(`/interview/${data.interview_id}`)
-       *
-       * but `data` did not exist.
-       */
-
-      navigate(
-        `/interview/${interviewData.interview_id}`,
-        {
-          state: interviewData,
-        }
-      );
-    } catch (err) {
-      console.error(
-        "Start interview error:",
-        err
-      );
-
-      setError(
-        getApiErrorMessage(
-          err,
-          "Failed to start interview."
-        )
-      );
-    } finally {
-      setStartingInterview(false);
-    }
+    navigate(
+      `/interview/configure/${candidate.id}`
+    );
   };
 
   return (
@@ -178,7 +148,7 @@ function ResumeUpload() {
         </p>
       </div>
 
-      {/* Resume form */}
+      {/* Resume upload form */}
       <div className="mt-8">
         <ResumeForm
           name={name}
@@ -199,11 +169,10 @@ function ResumeUpload() {
         />
       </div>
 
-      {/* Processed candidate */}
+      {/* Show processed candidate after successful upload */}
       <ResumeProcessedCard
         candidate={candidate}
-        startingInterview={startingInterview}
-        onStartInterview={handleStartInterview}
+        onStartInterview={handleConfigureInterview}
       />
     </div>
   );

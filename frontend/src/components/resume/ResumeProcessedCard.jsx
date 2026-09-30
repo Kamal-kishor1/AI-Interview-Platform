@@ -1,8 +1,11 @@
 function ResumeProcessedCard({
   candidate,
-  startingInterview,
   onStartInterview,
 }) {
+  /*
+   * Do not render anything until a candidate
+   * has been successfully created.
+   */
   if (!candidate) {
     return null;
   }
@@ -41,12 +44,9 @@ function ResumeProcessedCard({
       <button
         type="button"
         onClick={onStartInterview}
-        disabled={startingInterview}
         className="mt-6 rounded-lg bg-green-600 px-5 py-2.5 font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {startingInterview
-          ? "Starting Interview..."
-          : "Start Interview"}
+        Configure Interview
       </button>
     </div>
   );

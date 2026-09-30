@@ -8,6 +8,8 @@ from app.models.candidate import Candidates
 from app.models.interview import Interview
 from app.models.question import Question
 
+from app.schemas.interview import InterviewCreate
+
 
 class InterviewServiceError(Exception):
     """Base exception for interview service errors."""
@@ -51,15 +53,19 @@ class InterviewService:
     @staticmethod
     def start_interview(
         db: Session,
-        candidate_id: int,
+        interview_data: InterviewCreate,
     ) -> dict:
 
         # 1. Find candidate
-        candidate = db.query(Candidates).filter(Candidates.id == candidate_id).first()
+        candidate = (
+            db.query(Candidates)
+            .filter(Candidates.id == interview_data.candidate_id)
+            .first()
+        )
 
         if not candidate:
             raise CandidateNotFoundError(
-                f"Candidate with id {candidate_id} was not found."
+                f"Candidate with id {interview_data.candidate_id} was not found."
             )
 
         # 2. Get interview type
@@ -79,13 +85,73 @@ class InterviewService:
                 f"No questions available for interview type " f"{interview_type}."
             )
 
-        # 4. Create interview
-        interview = Interview(
-            candidate_id=candidate.id,
-            interview_type=interview_type,
-            status="IN_PROGRESS",
-            started_at=datetime.now(timezone.utc),
+        # i) existing active interview
+        existing_interview = (
+            db.query(Interview)
+            .filter(Interview.candidate_id == candidate.id)
+            .order_by(Interview.created_at.desc())
+            .first()
         )
+
+        # ii) Handle existing interview
+        if existing_interview:
+
+            # already started: do not create another interview.
+
+            if existing_interview.status == "IN_PROGRESS":
+                interview = existing_interview
+
+            # pending: resuse it, apply latest configuration, and move it to in_progress
+            elif existing_interview.status == "PENDING":
+
+                existing_interview.difficulty = interview_data.difficulty
+                existing_interview.question_count = interview_data.question_count
+                existing_interview.use_skills = interview_data.use_skills
+                existing_interview.use_projects = interview_data.use_projects
+                existing_interview.use_experience = interview_data.use_experience
+                existing_interview.use_resume = interview_data.use_resume
+
+                existing_interview.status = "IN_PROGRESS"
+                existing_interview.started_at = datetime.now(timezone.utc)
+
+                interview = existing_interview
+
+            # completed interview: for now allow creation of a new interview
+            elif existing_interview.status == "COMPLETED":
+
+                interview = Interview(
+                    candidate_id=candidate.id,
+                    interview_type=interview_type,
+                    status="IN_PROGRESS",
+                    difficulty=interview_data.difficulty,
+                    question_count=interview_data.question_count,
+                    use_skills=interview_data.use_skills,
+                    use_projects=interview_data.use_projects,
+                    use_experience=interview_data.use_experience,
+                    use_resume=interview_data.use_resume,
+                    started_at=datetime.now(timezone.utc),
+                )
+
+            else:
+                raise InterviewCreationError(
+                    f"Interview has unsupported status: {existing_interview.status}"
+                )
+
+        else:
+            interview = Interview(
+                candidate_id=candidate.id,
+                interview_type=interview_type,
+                status="IN_PROGRESS",
+                difficulty=interview_data.difficulty,
+                question_count=interview_data.question_count,
+                use_skills=interview_data.use_skills,
+                use_projects=interview_data.use_projects,
+                use_experience=interview_data.use_experience,
+                use_resume=interview_data.use_resume,
+                started_at=datetime.now(timezone.utc),
+            )
+
+        # 7. persist changes
 
         try:
             db.add(interview)

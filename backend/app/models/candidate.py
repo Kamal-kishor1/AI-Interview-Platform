@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, func, Text
+from sqlalchemy.orm import relationship
+
 from app.core.database import Base
 
 
@@ -15,3 +17,6 @@ class Candidates(Base):
     created_at = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+    # relationship:
+    interviews = relationship("Interview", back_populates="candidate")
